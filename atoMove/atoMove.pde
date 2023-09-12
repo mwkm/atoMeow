@@ -71,7 +71,7 @@ float vMax = dMax / dt;
 
 
 //  For image sequence processing
-
+PGraphics hBmp;
 /*
 
   The following code assumes you want to process an image sequence.  The simulation
@@ -127,7 +127,7 @@ void setup() {
   initDots(numDots);
   
   inputFrameNum = inputStartFrame;
-  
+  hBmp = createGraphics(simXY, simXY, P2D);
 }
 
 
@@ -252,8 +252,7 @@ void drawDots(int np, float r, color c) {
 //
 void updateField(PImage bmp) {
 
-  PGraphics hBmp = createGraphics(simXY, simXY, P2D);
-  fieldBuf = createImage(simXY, simXY, ARGB);
+  
   hBmp.beginDraw();
   hBmp.image(bmp, 0, 0, simXY, simXY);
   fieldBuf = hBmp.copy();
