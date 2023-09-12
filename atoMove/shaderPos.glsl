@@ -190,10 +190,10 @@ void main() {
 
   //  Make periodic
   pos += dp;   
-  //if (pos.x < -1.0) pos.x += 2.0;
-  //else if (pos.x > 1.0) pos.x -= 2.0;
-  //if (pos.y < -1.0) pos.y += 2.0;
-  //else if (pos.y > 1.0) pos.y -= 2.0;
+  if (pos.x < -1.0) pos.x += 2.0;
+  else if (pos.x > 1.0) pos.x -= 2.0;
+  if (pos.y < -1.0) pos.y += 2.0;
+  else if (pos.y > 1.0) pos.y -= 2.0;
   
   gl_FragColor = encodeV2(pos);  // Result to be rec'd by 'posBuf'
 
