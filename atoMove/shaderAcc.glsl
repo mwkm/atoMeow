@@ -231,10 +231,10 @@ void main() {
     
     vec2 dp = dotPos - pos;
 
-    //if (dp.x > 1.0) dp.x -= 2.0;
-    //else if (dp.x < -1.0) dp.x += 2.0;
-    //if (dp.y > 1.0) dp.y -= 2.0;
-    //else if (dp.y < -1.0) dp.y += 2.0;
+    if (dp.x > 1.0) dp.x -= 2.0;
+    else if (dp.x < -1.0) dp.x += 2.0;
+    if (dp.y > 1.0) dp.y -= 2.0;
+    else if (dp.y < -1.0) dp.y += 2.0;
 
     float d2 = dot(dp, dp) + 0.00003;
     float d  = sqrt(d2);
