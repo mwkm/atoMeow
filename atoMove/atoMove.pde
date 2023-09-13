@@ -33,19 +33,20 @@
 //  The following global variables control
 //  various sim parameters
 
-int   numDots    = 1024;   // # of dots in the sim
-float dotCharge  = 0.5;   // Charge per dot, keep (numDots * numDots) lower than say 2000.
-
+float bmpClamp   = 0.07;      // If the total charge of the base image is too low, the dots get angry (TODO: learn the underlying alg to find out why, and optimal values or better tweaks, like easing into the clamp,etc)
+int   numDots    = 8192;   // # of dots in the sim
+float dotCharge  = 0.20;   // Charge per dot, keep (numDots * numDots) lower than say 2000.
 //  Simulation controls
 //
-float blankLevel = 0.95;    // Threshold to repel (0.0 - 1.0, default: 1.0)
+
+float blankLevel = 1.0;    // Threshold to repel (0.0 - 1.0, default: 1.0) 
 float timeStep   = 0.001;  // Sim timestep       (Default: 0.001)
 float dMax       = 0.005;   // Max dot displacment    (Default: 0.005)
-float sustain    = 0.95;   // Sustained Velocity between steps (Default: 0.95)
+float sustain    = 0.95;   // Sustained Velocity between steps (Default: 0.95) 
 
 //  GLSL Sim buffer dimension
 //
-static int bufXY    = 256;    // GLSL workbuf dimensions, i.e. numDots MAX. 128^2 = 16384, 64^2 = 4096
+static int bufXY    = 128;    // GLSL workbuf dimensions, i.e. numDots MAX. 128^2 = 16384, 64^2 = 4096
 static int simXY    = 512;    // Electrostatic field resolution (higher, more expensive)
 
 //  Random seed (random() used in 'initDots' only)
@@ -59,7 +60,7 @@ PImage    velBuf, posBuf, fieldBuf;
 String    accShaderFile = "shaderAcc.glsl";
 String    velShaderFile = "shaderVel.glsl";
 String    posShaderFile = "shaderPos.glsl";
-
+ 
 //  active 'Acc' buffer index
 int activeAcc = 0;
 
@@ -69,10 +70,11 @@ float dt_2 = 0.5 * timeStep;
 float dtt  = dt * dt;
 float vMax = dMax / dt;
 
-
+//  Some debug stuff
+int Time1;
+int Time2;
 //  For image sequence processing
-PGraphics hBmp;
-PImage target;
+
 /*
 
   The following code assumes you want to process an image sequence.  The simulation
@@ -98,27 +100,27 @@ int simsPerTransition    = 250;  // 250 sim steps for the first output frame
 int samplesPerTransition = 1;    // only 1 sample output for the first transition 
 
 //  Your input image sequence relative to the Processing sketch
-String inputImagePrefix  = "../../resource/bw_png/bw_";
+String inputImagePrefix  = "C:/BadAppleHalftone - Copy/Bad Apple";
 String inputImageExt     = ".png";
-int    inputStartFrame   = 1;
-int    inputEndFrame     = 50;
+int    inputStartFrame   = 0; //0
+int    inputEndFrame     = 6571; // 6571
 int    inputSteps        = 1;
 int    inputFrameNum;
 
 //  Output frame names
 String outputImagePrefix  = "../../outputs/atoMove/mj_";
 String outputImageExt     = ".png";
-int outFrameNum           = 1;
-float dotRadius           = 8.0;
-
-
+int outFrameNum           = 0;
+float dotRadius           = 6.0;
+PGraphics hBmp;
+PImage target;
 //
 //  ======= Core Processing code ========
 //
 
 void setup() {
 
-  size(512, 512, P2D);  // Change the first 2 numbers output image size
+  size(1440, 1080, P2D);  // Change the first 2 numbers output image size
   background(0);
   noStroke();
   randomSeed(rndSeed); 
@@ -134,7 +136,8 @@ void setup() {
 
 
 void draw() {
-  
+    Time1=millis();
+    //PImage target = loadImage(inputImagePrefix + nf(inputFrameNum, 4) + inputImageExt);
     target = loadImage(inputImagePrefix + nf(inputFrameNum, 4) + inputImageExt);
     updateField(target);  // refresh 'field'
 
@@ -142,7 +145,7 @@ void draw() {
       sim(simsPerTransition/samplesPerTransition);
       background(255);
       drawDots(numDots, dotRadius, color(0));
-      save(outputImagePrefix + nf(outFrameNum++, 4) + outputImageExt);
+     save(outputImagePrefix + nf(outFrameNum++, 4) + outputImageExt);
     }
     
     inputFrameNum += inputSteps;
@@ -152,9 +155,15 @@ void draw() {
     }
 
     // **** Update both simsPerTransition & samplesPerTranstion for the rest ****
-    samplesPerTransition = 2;   // take 2 samples per transition (give you some slow-mo)
+    samplesPerTransition = 1;   // take 2 samples per transition (give you some slow-mo)
     simsPerTransition    = 40;  // 40 sim steps per transition
-        
+      Time2=millis();    
+       int Between=Time2-Time1;
+       int a=((inputEndFrame-inputFrameNum)*Between);
+       int seconds = (int) (a / 1000) % 60 ;
+       int minutes = (int) ((a / (1000*60)) % 60);
+       int hours   = (int) ((a / (1000*60*60)) % 24);
+       print("Frame Time: " + Between + "ms, ETA: " + nf(hours,2) + ":" + nf(minutes,2) + ":" + nf(seconds,2) +"\n");
 }
 
 
@@ -218,7 +227,10 @@ void initSIM() {
   posShader.set("u_resolution", float(bufXY), float(bufXY));
   posShader.set("u_numDots", numDots);
   posShader.set("u_dMax", dMax);
-   
+  
+  
+  
+  
   //  Workhorse offscreen engine for shaders
   hidden  = createGraphics(bufXY, bufXY, P2D);
 
@@ -267,7 +279,7 @@ void drawDots(int np, float r, color c) {
 //
 void updateField(PImage bmp) {
 
-
+  //PGraphics hBmp = createGraphics(simXY, simXY, P2D);
   fieldBuf = createImage(simXY, simXY, ARGB);
   hBmp.beginDraw();
   hBmp.image(bmp, 0, 0, simXY, simXY);
@@ -289,47 +301,52 @@ void updateField(PImage bmp) {
 
   float dotChargeTotal = float(numDots) * dotCharge;
   float bmpCharge = dotChargeTotal / bmpChargeTotal;
-
+  if (bmpCharge > bmpClamp) bmpCharge=bmpClamp;
+    
+  
   fieldBuf.loadPixels();
   for (int i = 0; i < simXY*simXY; i++) {
     float gray = decode(fieldBuf.pixels[i]);
     fieldBuf.pixels[i] = encode((blankLevel - gray) * bmpCharge);
   }
   fieldBuf.updatePixels();
-
+  int Between=Time2-Time1;
+  print("[" + inputFrameNum + "/" + inputEndFrame + " > " + outFrameNum + "] (" + bmpCharge + " | " + dotChargeTotal + " | " + bmpChargeTotal + ") ");
 }
 
 //  Update 'Acc' shader uniforms
 //
 void updateAccShaderUniforms() {  
-
+  //accShader.set("u_resolution", float(bufXY), float(bufXY));
   accShader.set("u_pos", posBuf);
   accShader.set("u_bmpQ", fieldBuf);
-
+  //accShader.set("u_simXY", simXY);
+  //accShader.set("u_dotCharge", dotCharge);
+  //accShader.set("u_numDots", numDots);
 }
 
 //  Update 'Vel' shader uniforms
 //
 void updateVelShaderUniforms() {  
-
+  //velShader.set("u_resolution", float(bufXY), float(bufXY));
   velShader.set("u_vel", velBuf);
   velShader.set("u_a0", accBuf[1-activeAcc]);  // Last Acc.
   velShader.set("u_a1", accBuf[activeAcc]);    // Latest Acc.
   velShader.set("u_vMax", vMax);
-    
+  //velShader.set("u_sustain", sustain);    
   velShader.set("u_dt_2", dt_2);
-
+  //velShader.set("u_numDots", numDots);
 }
 
 //  Update 'Pos' shader uniforms
 //
 void updatePosShaderUniforms() {  
-
+  //posShader.set("u_resolution", float(bufXY), float(bufXY));
   posShader.set("u_pos", posBuf);
   posShader.set("u_vel", velBuf);
   posShader.set("u_acc", accBuf[activeAcc]);
-
+  //posShader.set("u_dMax", dMax);
   posShader.set("u_dt", dt);    
   posShader.set("u_dtt", dtt);  
-
+  //posShader.set("u_numDots", numDots);
 }
